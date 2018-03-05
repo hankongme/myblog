@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Home;
 
 use App\Http\Controllers\Tools\BaseTools;
+use App\Nav;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\URL;
@@ -15,11 +16,11 @@ class CommonController extends Controller
     public function __construct()
     {
         C(BaseTools::get_system_config());
-//        View::share('head_nav',$this->getNav());
+        View::share('head_nav',$this->getNav());
         $this->config = $this->getConfig();
         View::share('CONFIG', $this->config);
         View::share('is_mobile', BaseTools::isMobile());
-        View::share('web_title', $this->config['WEB_NAME']);
+        View::share('web_title', $this->config['WEB_TITLE']);
         View::share('web_keywords', $this->config['WEB_KEYWORDS']);
         View::share('web_description', $this->config['WEB_DESCRIPTION']);
     }
@@ -30,10 +31,13 @@ class CommonController extends Controller
     protected function getNav()
     {
         $current_url = URL::current();
-        $data        = Nav::where('status', 1)->orderBy('sort')->get()->toArray();
+        $data        = Nav::where('status', 1)->orderBy('sort','desc')->get()->toArray();
         foreach ($data as $k => $v) {
-            $data[$k]['url']        = BaseTools::is_http($v['url']) ? $v['url'] : url($v['url']);
-            $data[$k]['class_name'] = (strpos($current_url, $data[$k]['url']) !== false) ? $data[$k]['class_name'] . ' current' : $data[$k]['class_name'];
+            if($data[$k]['url'] != '/'){
+                $data[$k]['class_name'] = (strpos($current_url, $data[$k]['url']) !== false) ? $data[$k]['class_name'] . ' active' : $data[$k]['class_name'];
+            }else{
+                $data[$k]['class_name'] = ($current_url == url($data[$k]['url']))? $data[$k]['class_name'] . ' active' : $data[$k]['class_name'];
+            }
         }
         return $data;
     }
@@ -43,15 +47,12 @@ class CommonController extends Controller
     {
         $config                           = [];
         $config['WEB_NAME']               = C('WEB_NAME');
+        $config['WEB_TITLE']              = C('WEB_TITLE');
         $config['WEB_KEYWORDS']           = C('WEB_KEYWORDS');
         $config['WEB_DESCRIPTION']        = C('WEB_DESCRIPTION');
-        $config['COMPANY_PHONE']          = C('COMPANY_PHONE');
-        $config['COMPANY_NAME']           = C('COMPANY_NAME');
-        $config['COMPANY_EMAIL']          = C('COMPANY_EMAIL');
+        $config['BLOG_EMAIL']             = C('BLOG_EMAIL');
         $config['POST_NUM']               = C('POST_NUM');
         $config['WEB_QQ']                 = C('WEB_QQ');
-        $config['COMPANY_ADDRESS']        = C('COMPANY_ADDRESS');
-        $config['COMPANY_ADDRESS_EN']     = C('COMPANY_ADDRESS_EN');
         $config['WEB_NUMBER']             = C('WEB_NUMBER');
         $config['WEB_COMPANY_USER_PHONE'] = C('WEB_COMPANY_USER_PHONE');
         return $config;

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\ArticleTags;
 use App\Http\Controllers\Tools\ActionLog;
 use App\Http\Controllers\Tools\StringConstants;
 use App\Http\Controllers\Tools\BaseTools;
@@ -12,15 +13,25 @@ use App\Article;
 use App\BaseModel;
 use App\Http\Controllers\Controller;
 use App\ArticleCategory;
+use App\Repositries\ArticleRespository;
+use App\Tags;
 use Illuminate\Support\Facades\Input;
+use Symfony\Component\HttpFoundation\Request;
 
 
 class ArticleController extends Controller
 {
 
+    public $article;
+
+    public function __construct(ArticleRespository $articleRespository)
+    {
+        $this->article = $articleRespository;
+    }
+
     public function index()
     {
-        $map[0]     = [ 'dcnet_article.status', '>=', '0' ];
+        $map[0]     = [ 'article.status', '>=', '0' ];
         $search_form = Input::get ();
         foreach ($search_form as $k => $v) {
             if ($v == ''){
@@ -31,23 +42,23 @@ class ArticleController extends Controller
         }
 
         if (isset($search_form[ 'title' ]) && $search_form[ 'title' ]){
-            $map[] = [ 'dcnet_article.title' , 'like' , '%' . $search_form[ 'title' ] . '%' ];
+            $map[] = [ 'article.title' , 'like' , '%' . $search_form[ 'title' ] . '%' ];
         }
 
         if (isset($search_form[ 'status' ]) && ($search_form[ 'status' ]!=10)){
-            $map[] = [ 'dcnet_article.status' , '=' , $search_form[ 'status' ]];
+            $map[] = [ 'article.status' , '=' , $search_form[ 'status' ]];
         }
 
         //发布时间
         if (isset($search_form[ 'start_time' ]) && $search_form[ 'start_time' ]){
-            $map[] = [ 'dcnet_article.created_at' , '>' , $search_form[ 'start_time' ] ];
+            $map[] = [ 'article.created_at' , '>' , $search_form[ 'start_time' ] ];
         }
         if (isset($search_form[ 'end_time' ]) && $search_form[ 'end_time' ]){
-            $map[] = [ 'dcnet_article.created_at' , '<' , $search_form[ 'end_time' ] ];
+            $map[] = [ 'article.created_at' , '<' , $search_form[ 'end_time' ] ];
         }
 
         $page_count = 10;
-        $data       = Article::where($map)->leftjoin('dcnet_article_category','dcnet_article.category_id','=','dcnet_article_category.id')->orderBy('dcnet_article.sort','desc')->orderBy('dcnet_article.id','desc')->select('dcnet_article.*','dcnet_article_category.name as category_name')->paginate($page_count);
+        $data       = Article::where($map)->leftjoin('article_category','article.category_id','=','article_category.id')->orderBy('article.sort','desc')->orderBy('article.id','desc')->select('article.*','article_category.name as category_name')->paginate($page_count);
 
         $datalist = [ ];
 
@@ -86,25 +97,27 @@ class ArticleController extends Controller
     }
 
     /**
-     * 创建文章
+     * 添加文章
+     * @param int $md
+     *
      * @return mixed
      */
-    public function create()
+    public function create($md = 1)
     {
 
-        $data            = BaseModel::getColumnTable('dcnet_article');
+        $data            = BaseModel::getColumnTable('article');
         $data['status']  = 1;
         $data['is_must'] = 0;
         $data['sort'] = 10;
         $data['is_best'] = 1;
         $data['is_top'] = 0;
+        $data['is_md'] = $md;
 
         $category = ArticleCategory::where('status',1)->get()->toArray();
-        $tree[0] = '顶级分类';
-        $tree = array_merge($tree,BaseTools::get_tree($category,0,0));
+        $tree = BaseTools::get_tree($category,0,0);
         $data['submit_url'] = url(__ADMIN_PATH__.'/article/store');
-
-        return view('admin.article.edit')->with([ 'data' => $data,'category'=>$tree]);
+        $blade = $md?'admin.article.edit':'admin.article.edit_ueditor';
+        return view($blade)->with([ 'data' => $data,'category'=>$tree,'tags'=>[]]);
     }
 
     /**
@@ -138,14 +151,12 @@ class ArticleController extends Controller
     {
         $data = $request->all();
         unset($data['_token']);
-
-        $model = new Article();
-        $model->save_data($data);
-        if ($model->error) {
-            return BaseTools::ajaxError($model->error);
+        $article = $this->article->save_data($data);
+        if ($this->article->error) {
+            return BaseTools::ajaxError($this->article->error);
         }
         //操作日志记录
-        ActionLog::actionLog('添加文章'.$data['title']);
+        ActionLog::actionLog($article->id,'添加文章'.$data['title']);
         return BaseTools::ajaxSuccess('添加成功!');
     }
 
@@ -163,11 +174,13 @@ class ArticleController extends Controller
             return BaseTools::error('未找到该信息!');
         }
         $data               = $data->toArray();
+        $tags = ArticleTags::where('article_tags.article_id',$id)->join('tags','article_tags.tag_id','=','tags.id')->get();
         $data['submit_url'] = url(__ADMIN_PATH__.'/article/update');
         $category = ArticleCategory::where('status',1)->get()->toArray();
         $tree[0] = '顶级分类';
         $tree = array_merge($tree,BaseTools::get_tree($category,0,0));
-        return view('admin.article.edit')->with([ 'data' => $data,'category'=>$tree ]);
+        $blade = $data['is_md']?'admin.article.edit':'admin.article.edit_ueditor';
+        return view($blade)->with([ 'data' => $data,'category'=>$tree,'tags'=>$tags ]);
     }
 
 
@@ -175,18 +188,15 @@ class ArticleController extends Controller
     {
         $data = $request->all();
         unset($data['_token']);
-        $question = new Article();
-        $question->save_data($data);
-        if ($question->error) {
-            return BaseTools::ajaxError($question->error);
+        $article = $this->article->save_data($data);
+        if ($this->article->error) {
+            return BaseTools::ajaxError($this->article->error);
         }
-
         //操作日志记录
         ActionLog::actionLog($data['id']);
         return BaseTools::ajaxSuccess('修改成功!');
 
     }
-
 
 
 

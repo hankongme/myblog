@@ -20,13 +20,9 @@ class ToolController extends Controller
      */
     public function upload_image()
     {
-
+        $file = is_null(Input::file('file'))?Input::file('editormd-image-file'):Input::file('file');
         //获取上传的图片path
-
-        if (!is_null(Input::file('file'))) {
-
-            $file = Input::file('file');
-
+        if (!is_null($file)) {
             if (isset($_POST['chunks']) && $_POST['chunks'] > 0) {
 
                 return $this->file_upload_burst($_POST, $file);
@@ -39,7 +35,7 @@ class ToolController extends Controller
 
                 $filename = str_replace(' ', '_', ltrim(microtime(), '0.')) . rtrim(strrchr($filename, '.'), '.');
 
-                $uploadSuccess = Input::file('file')->move($destinationPath, $filename);
+                $uploadSuccess = $file->move($destinationPath, $filename);
                 $data['file_url'] = '/'.rtrim($destinationPath, '/') . '/' . $filename;
                 return $data;
 

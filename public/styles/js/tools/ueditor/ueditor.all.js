@@ -14387,6 +14387,10 @@
                 "pre{margin:.5em 0;padding:.4em .6em;border-radius:8px;background:#f8f8f8;}",
                 me.document
             );
+            utils.cssRule(
+                "code",
+                me.document
+            );
         });
         me.setOpt("insertcode", {
             as3: "ActionScript3",
@@ -14443,7 +14447,11 @@
             execCommand: function(cmd, lang) {
                 var me = this,
                     rng = me.selection.getRange(),
-                    pre = domUtils.findParentByTagName(rng.startContainer, "pre", true);
+                    pre = domUtils.findParentByTagName(rng.startContainer, "pre", true),
+                    code_tag= domUtils.findParentByTagName(rng.startContainer, "code", true);
+                if(code_tag){
+                    code_tag.className = "lang-"+lang;
+                }
                 if (pre) {
                     pre.className = "brush:" + lang + ";toolbar:false;";
                 } else {
@@ -14533,14 +14541,15 @@
                         "inserthtml",
                         '<pre id="coder"class="brush:' +
                         lang +
-                        ';toolbar:false">' +
+                        ';toolbar:false"><code class="lang-'+lang+'">' +
                         code +
-                        "</pre>",
+                        "</code></pre>",
                         true
                     );
 
                     pre = me.document.getElementById("coder");
                     domUtils.removeAttributes(pre, "id");
+                    pre = pre.children[0];
                     var tmpNode = pre.previousSibling;
 
                     if (
@@ -14565,8 +14574,8 @@
                 var path = this.selection.getStartElementPath();
                 var lang = "";
                 utils.each(path, function(node) {
-                    if (node.nodeName == "PRE") {
-                        var match = node.className.match(/brush:([^;]+)/);
+                    if (node.nodeName == "CODE") {
+                        var match = node.className.match(/lang-([^;]+)/);
                         lang = match && match[1] ? match[1] : "";
                         return false;
                     }
@@ -14576,8 +14585,8 @@
         };
 
         me.addInputRule(function(root) {
-            utils.each(root.getNodesByTagName("pre"), function(pre) {
-                var brs = pre.getNodesByTagName("br");
+            utils.each(root.getNodesByTagName("code"), function(code_tag) {
+                var brs = code_tag.getNodesByTagName("br");
                 if (brs.length) {
                     browser.ie &&
                     browser.ie11below &&
@@ -14590,20 +14599,20 @@
                     return;
                 }
                 if (browser.ie && browser.ie11below && browser.version > 8) return;
-                var code = pre.innerText().split(/\n/);
-                pre.innerHTML("");
+                var code = code_tag.innerText().split(/\n/);
+                code_tag.innerHTML("");
                 utils.each(code, function(c) {
                     if (c.length) {
-                        pre.appendChild(UE.uNode.createText(c));
+                        code_tag.appendChild(UE.uNode.createText(c));
                     }
-                    pre.appendChild(UE.uNode.createElement("br"));
+                    code_tag.appendChild(UE.uNode.createElement("br"));
                 });
             });
         });
         me.addOutputRule(function(root) {
-            utils.each(root.getNodesByTagName("pre"), function(pre) {
+            utils.each(root.getNodesByTagName("code"), function(code_tag) {
                 var code = "";
-                utils.each(pre.children, function(n) {
+                utils.each(code_tag.children, function(n) {
                     if (n.type == "text") {
                         //在ie下文本内容有可能末尾带有\n要去掉
                         //trace:3396
@@ -14617,7 +14626,7 @@
                     }
                 });
 
-                pre.innerText(code.replace(/(&nbsp;|\n)+$/, ""));
+                code_tag.innerText(code.replace(/(&nbsp;|\n)+$/, ""));
             });
         });
         //不需要判断highlight的command列表
@@ -14652,7 +14661,7 @@
         };
         me.addListener("beforeenterkeydown", function() {
             var rng = me.selection.getRange();
-            var pre = domUtils.findParentByTagName(rng.startContainer, "pre", true);
+            var pre = domUtils.findParentByTagName(rng.startContainer, "code", true);
             if (pre) {
                 me.fireEvent("saveScene");
                 if (!rng.collapsed) {
@@ -14778,7 +14787,7 @@
 
         me.addListener("tabkeydown", function(cmd, evt) {
             var rng = me.selection.getRange();
-            var pre = domUtils.findParentByTagName(rng.startContainer, "pre", true);
+            var pre = domUtils.findParentByTagName(rng.startContainer, "code", true);
             if (pre) {
                 me.fireEvent("saveScene");
                 if (evt.shiftKey) {
@@ -14843,7 +14852,7 @@
         me.addListener("beforeinserthtml", function(evtName, html) {
             var me = this,
                 rng = me.selection.getRange(),
-                pre = domUtils.findParentByTagName(rng.startContainer, "pre", true);
+                pre = domUtils.findParentByTagName(rng.startContainer, "code", true);
             if (pre) {
                 if (!rng.collapsed) {
                     rng.deleteContents();
@@ -14947,7 +14956,7 @@
                     start = rng.startContainer;
                 if (
                     rng.collapsed &&
-                    (pre = domUtils.findParentByTagName(rng.startContainer, "pre", true)) &&
+                    (pre = domUtils.findParentByTagName(rng.startContainer, "code", true)) &&
                     !pre.nextSibling
                 ) {
                     var last = pre.lastChild;
@@ -14971,14 +14980,14 @@
             rng.txtToElmBoundary(true);
             var start = rng.startContainer;
             if (
-                domUtils.isTagNode(start, "pre") &&
+                domUtils.isTagNode(start, "code") &&
                 rng.collapsed &&
                 domUtils.isStartInblock(rng)
             ) {
                 var p = me.document.createElement("p");
                 domUtils.fillNode(me.document, p);
-                start.parentNode.insertBefore(p, start);
-                domUtils.remove(start);
+                start.parentNode.parentNode.insertBefore(p, start.parentNode);
+                domUtils.remove(start.parentNode);
                 rng.setStart(p, 0).setCursor(false, true);
                 domUtils.preventDefault(evt);
                 return true;
@@ -17960,7 +17969,7 @@
                                             }
                                         }
                                         break;
-                                    case "pre":
+                                    case "code":
                                         node.innerText(node.innerText().replace(/&nbsp;/g, " "));
                                 }
                             }

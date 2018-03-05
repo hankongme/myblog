@@ -23,20 +23,17 @@ require_once __DIR__ . '/admin/systemconfig_routes.php';
 //引入自定义菜单
 require_once __DIR__ . '/admin/diymenu_routes.php';
 
-//商品管理
-require_once __DIR__ . '/admin/goods_routes.php';
+//引入文章路由
+require_once  __DIR__.'/admin/article_routes.php';
 
-//分类
-require_once __DIR__ . '/admin/category_routes.php';
+//文章分类
+require_once  __DIR__.'/admin/article_category_routes.php';
 
-//用户
-require_once __DIR__ . '/admin/users_routes.php';
+//标签管理
+require_once  __DIR__.'/admin/tag_routes.php';
 
-//订单
-require_once __DIR__ . '/admin/order_routes.php';
-
-//广告
-require_once __DIR__ . '/admin/adv_routes.php';
+//导航管理
+require_once  __DIR__.'/admin/nav_routes.php';
 
 
 /**

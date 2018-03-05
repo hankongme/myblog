@@ -49,14 +49,10 @@
 
 
             <div class="form-group">
-                {!! Form::label('title','状态',['class'=>'col-sm-3 control-label']) !!}
+                {!! Form::label('title','显示',['class'=>'col-sm-3 control-label']) !!}
                 <div class="col-sm-8">
 
-
-                    显示{!! Form::radio('status',1,false) !!}
-
-                    隐藏 {!! Form::radio('status',0,false) !!}
-
+                    <input type="checkbox" class="js-switch" name="status" value="1">
 
                 </div>
             </div>
@@ -96,5 +92,6 @@
         DCNET.setValue('status', '{{$data['status'] or 1}}');
 
     </script>
+    @include('admin.plugins.from')
 
 @endsection

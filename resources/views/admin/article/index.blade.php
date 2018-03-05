@@ -13,9 +13,15 @@
                 <div class="panel-actions">
                     @can('admin.article.create')
                     <button type="button" class="btn btn-primary"
-                            onclick="edit('添加','{{url(__ADMIN_PATH__.'/article/create')}}')">
-                        <i class="fa fa-plus" aria-hidden="true"></i>
+                            onclick="edit('添加','{{url(__ADMIN_PATH__.'/article/create/1')}}')">
+                        添加MD
                     </button>
+
+                    <button type="button" class="btn btn-primary"
+                            onclick="edit('添加','{{url(__ADMIN_PATH__.'/article/create/0')}}')">
+                        添加文章
+                    </button>
+
                     @endcan
 
                 </div>
@@ -106,7 +112,7 @@
 
                                         @can('admin.article.del')
                                         <a class="confirm ajax-get btn btn-xs btn-white"
-                                           href="{!! url('admin/article/del',['id',$v['id']]) !!}"
+                                           href="{!! url('admin/article',[$v['id'],'del']) !!}"
                                            data-toggle="tooltip" data-placement="left"
                                            title="删除"><i
                                                     class="fa fa-minus-circle"></i></a>

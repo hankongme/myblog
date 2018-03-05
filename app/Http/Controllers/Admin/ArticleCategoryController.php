@@ -5,14 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Tools\ActionLog;
 use App\Http\Controllers\Tools\StringConstants;
 use App\Http\Controllers\Tools\BaseTools;
-
-
-use App\Http\Requests\ArticleRequest;
-use App\Http\Requests\ArticleCategoryRequest;
 use App\Article;
 use App\BaseModel;
 use App\Http\Controllers\Controller;
 use App\ArticleCategory;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 
 
@@ -95,7 +92,7 @@ class ArticleCategoryController extends Controller
     public function create()
     {
 
-        $data            = BaseModel::getColumnTable('dcnet_article_category');
+        $data            = BaseModel::getColumnTable('article_category');
         $data['status']  = 1;
         $data['is_must'] = 0;
         $data['sort'] = 10;
@@ -119,7 +116,7 @@ class ArticleCategoryController extends Controller
      * @return mixed
      */
 
-    public function store(ArticleCategoryRequest $request)
+    public function store(Request $request)
     {
         $data = $request->all();
         unset($data['_token']);
@@ -156,7 +153,7 @@ class ArticleCategoryController extends Controller
     }
 
 
-    public function update(ArticleCategoryRequest $request)
+    public function update(Request $request)
     {
         $data = $request->all();
         unset($data['_token']);

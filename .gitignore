@@ -18,3 +18,4 @@ storage/logs/*
 *.idea/*
 public/Activity/*
 webpack.mix.js
+webpack.config.js

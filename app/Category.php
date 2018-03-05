@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    public $table='dcnet_category';
+    public $table='category';
     public $fillable=[
         'parent_id',
         'name',

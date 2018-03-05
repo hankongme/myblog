@@ -3,14 +3,18 @@
 namespace App\Http\Controllers\Home;
 
 use App\Article;
+use App\ArticleCategory;
 use App\CaseCategory;
 use App\Cases;
+use App\Category;
 use App\Http\Controllers\Tools\BaseTools;
 use App\Message;
+use App\Repositries\ArticleRespository;
 use App\Repositries\CasesCategoryRespository;
 use App\Repositries\CasesRespository;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 
@@ -18,26 +22,32 @@ class IndexController extends CommonController
 {
     private $case;
     private $case_category;
+    private $article;
 
-    public function __construct(CasesRespository $casesRespository,CasesCategoryRespository $casesCategoryRespository)
+    public function __construct(ArticleRespository $articleRespository,CasesRespository $casesRespository,CasesCategoryRespository $casesCategoryRespository)
     {
         parent::__construct();
         $this->case = $casesRespository;
         $this->case_category = $casesCategoryRespository;
+        $this->article = $articleRespository;
     }
 
     //
-    public function index(){
+    public function index(Request $request){
+        $page_count = 10;
         //获取首页推荐分类
-        $category = CaseCategory::where('status',1)->where('is_best',1)->get()->toArray();
-        foreach ($category as $k=>$v){
-            $category[$k]['data'] = Cases::where('status',1)->where('is_best',1)->where('category_id',$v['id'])->orderBy('sort','desc')->orderBy('created_at','desc')->offset(0)->limit(3)->get()->toArray();
+        $article = Article::published()->with(['tags'=>function($query){
+            $query->select('name as tag_name');
+        }])->orderBy('sort','desc')->orderBy('created_at','desc')->orderBy('id','desc')->paginate($page_count);
+        $page = $article->render('pagination::bootstrap-4');
+        if ($article) {
+            $data = $article->toArray();
         }
-
-        $news = Article::where('status',1)->where('is_best',1)->orderBy('sort','desc')->orderBy('created_at','desc')->offset(0)->limit(4)->get()->toArray();
         return view('home.index.index')->with([
-            'case'=>$category,
-            'news'=>$news
+            'category'=>$this->article->getCategory(),
+            'article_date'=>$this->article->getArticleDate(),
+            'data'=>$data['data'],
+            'page'=>$page
                                               ]);
     }
 

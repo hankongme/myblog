@@ -15,7 +15,7 @@ class ArticleCategory extends Model
         'updated_at'
     ];
 
-    protected $table = 'dcnet_article_category';
+    protected $table = 'article_category';
 
     public $error = '';
 
@@ -32,7 +32,10 @@ class ArticleCategory extends Model
     public function save_data($data)
     {
         $data['status'] = isset($data['status']) ? $data['status'] : 1;
-
+        if(!$data['name']){
+            $this->error = '请填写分类名称!';
+            return false;
+        }
         if ($data['parent_id']) {
             $parent = self::where('id',$data['parent_id'])->count();
             if(!$parent){
